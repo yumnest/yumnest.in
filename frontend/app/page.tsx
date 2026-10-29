@@ -1,69 +1,182 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState } from 'react';
+import { PRODUCTS, RECIPES } from '@/data/mockData';
+import { Product } from '@/types';
+import { Navbar } from '@/components/common/Navbar';
+import { Footer } from '@/components/common/Footer';
+import { MobileBottomNav } from '@/components/common/MobileBottomNav';
+import { CartDrawer, CartLineItem } from '@/components/common/CartDrawer';
+import { QuickViewModal } from '@/components/common/QuickViewModal';
+import { SearchModal } from '@/components/common/SearchModal';
+
+import { HeroSection } from '@/components/home/HeroSection';
+import { ValuePillars } from '@/components/home/ValuePillars';
+import { CategoryCircles } from '@/components/home/CategoryCircles';
+import { FeaturedProducts } from '@/components/home/FeaturedProducts';
+import { BroastPromoBanner } from '@/components/home/BroastPromoBanner';
+import { HomeAboutStory } from '@/components/home/HomeAboutStory';
+import { HomeRecipesPreview } from '@/components/home/HomeRecipesPreview';
+import { TrustAndAwards } from '@/components/home/TrustAndAwards';
+import { CustomerTestimonials } from '@/components/home/CustomerTestimonials';
+import { CtaBanner } from '@/components/home/CtaBanner';
 
 export default function Home() {
+  const [selectedCategory, setSelectedCategory] = useState<string>('All Products');
+  const [cartItems, setCartItems] = useState<CartLineItem[]>([
+    {
+      id: 'broast-masala-powder-v-b1',
+      product: PRODUCTS[0],
+      variant: PRODUCTS[0].variants[0],
+      quantity: 1,
+    },
+  ]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+
+  const broastProduct = PRODUCTS.find((p) => p.id === 'broast-masala-powder') || PRODUCTS[0];
+
+  const handleAddToCart = (product: Product, variantId: string, quantity: number) => {
+    const variant =
+      product.variants.find((v) => v.id === variantId) || product.variants[0];
+    const lineId = `${product.id}-${variant.id}`;
+
+    setCartItems((prev) => {
+      const existing = prev.find((item) => item.id === lineId);
+      if (existing) {
+        return prev.map((item) =>
+          item.id === lineId
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        );
+      }
+      return [...prev, { id: lineId, product, variant, quantity }];
+    });
+  };
+
+  const handleUpdateQuantity = (lineId: string, delta: number) => {
+    setCartItems((prev) =>
+      prev
+        .map((item) => {
+          if (item.id === lineId) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 ? { ...item, quantity: newQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean) as CartLineItem[]
+    );
+  };
+
+  const handleRemoveItem = (lineId: string) => {
+    setCartItems((prev) => prev.filter((item) => item.id !== lineId));
+  };
+
+  const handleClearCart = () => {
+    setCartItems([]);
+  };
+
+  const handleSelectCategory = (categoryName: string) => {
+    setSelectedCategory(categoryName);
+    const productsSection = document.getElementById('products');
+    if (productsSection) {
+      productsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const totalCartCount = cartItems.reduce((acc, it) => acc + it.quantity, 0);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="min-h-screen flex flex-col bg-[#FBF9F5] text-[#1C1917] selection:bg-[#E8AA42]/30 selection:text-[#12372A]">
+      {/* 1. Global Navigation Header */}
+      <Navbar
+        cartCount={totalCartCount}
+        onOpenCart={() => setIsCartOpen(true)}
+        onSearchClick={() => setIsSearchOpen(true)}
+      />
+
+      <main className="flex-1">
+        {/* 2. Hero Section with Showcase Slider */}
+        <HeroSection />
+
+        {/* 3. Four Value Pillars Bar */}
+        <ValuePillars />
+
+        {/* 4. Circular Category Navigation with Malayalam Subtitles */}
+        <CategoryCircles
+          selectedCategory={selectedCategory}
+          onSelectCategory={handleSelectCategory}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+
+        {/* 5. Complete Featured Products Collection */}
+        <FeaturedProducts
+          products={PRODUCTS}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          onAddToCart={handleAddToCart}
+          onViewProduct={(prod) => setQuickViewProduct(prod)}
+        />
+
+        {/* 6. Signature Broast Masala Spotlight Promo Banner */}
+        <BroastPromoBanner
+          broastProduct={broastProduct}
+          onAddToCart={handleAddToCart}
+          onViewProduct={(prod) => setQuickViewProduct(prod)}
+        />
+
+        {/* 7. Authentic Kerala Heritage & Processing Story */}
+        <HomeAboutStory />
+
+        {/* 8. Cooking Inspiration & Recipe Vlogs Preview */}
+        <HomeRecipesPreview recipes={RECIPES} />
+
+        {/* 9. Standards, Quality & Awards (Sample Data Disclosed) */}
+        <TrustAndAwards />
+
+        {/* 10. Sample Customer Testimonials (Sample Data Disclosed) */}
+        <CustomerTestimonials />
+
+        {/* 11. Closing Call-to-Action Banner */}
+        <CtaBanner />
       </main>
+
+      {/* 12. Global Comprehensive Footer */}
+      <Footer />
+
+      {/* 13. Mobile Bottom Navigation Bar */}
+      <MobileBottomNav
+        cartCount={totalCartCount}
+        onOpenCart={() => setIsCartOpen(true)}
+      />
+
+      {/* 14. Interactive Slide-in Cart Drawer */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        items={cartItems}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onClearCart={handleClearCart}
+      />
+
+      {/* 15. Product Quick View & Specification Modal */}
+      <QuickViewModal
+        product={quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+        onAddToCart={handleAddToCart}
+      />
+
+      {/* 16. Quick Real-Time Search Modal */}
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        products={PRODUCTS}
+        onSelectProduct={(prod) => {
+          setQuickViewProduct(prod);
+          setIsSearchOpen(false);
+        }}
+      />
     </div>
   );
 }
